@@ -1,0 +1,11 @@
+spring:
+  datasource:
+    url: jdbc:testcontainers:postgresql:16-alpine:///deep_reader_test?loggerLevel=OFF
+    driver-class-name: org.testcontainers.jdbc.ContainerDatabaseDriver
+  liquibase:
+    enabled: false
+  jpa:
+    open-in-view: false
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    hibernate:
+      ddl-auto: create-drop

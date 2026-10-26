@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Deep Reader — Классическая читалка с анализом контекста</title>
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600&family=Inter:wght@400;500;600&family=Lora:ital,wght@0,400;0,500;0,600;1,400&family=Merriweather:ital,wght@0,300;0,400;0,700;1,300;1,400&display=swap" rel="stylesheet">
+</head>
+<body class="theme-paper">
+    <header class="app-header">
+        <div class="header-container">
+            <div class="header-brand">
+                <a href="#" class="logo">
+                    <span class="logo-mark">📖</span>
+                    <span class="logo-text">Deep Reader</span>
+                </a>
+                <span class="header-divider"></span>
+                <span class="header-subtitle">Контекстный анализ оригинала</span>
+            </div>
+
+            <nav class="nav-tabs">
+                <button class="nav-tab active" data-tab="reader">Книга</button>
+                <button class="nav-tab" data-tab="library">Библиотека</button>
+                <button class="nav-tab" data-tab="annotations">Словарь сносок</button>
+            </nav>
+
+            <div class="header-actions">
+                <div id="backend-status" class="status-indicator" title="Статус сервера">
+                    <span class="status-dot"></span>
+                    <span class="status-label">Сервер...</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="main-container">
+        <section id="tab-reader" class="tab-pane active">
+            <div class="reader-layout">
+                <aside class="reader-meta-col">
+                    <div class="card meta-card">
+                        <div class="book-mini-header">
+                            <span class="book-genre-tag" id="reader-book-genre">Классика</span>
+                            <h3 id="reader-book-title" class="reader-book-title">The Great Gatsby</h3>
+                            <p id="reader-book-author" class="reader-book-author">F. Scott Fitzgerald</p>
+                        </div>
+
+                        <div class="form-group mt-3">
+                            <label for="chapter-select" class="control-label">Глава:</label>
+                            <select id="chapter-select" class="form-select"></select>
+                            <button id="btn-add-chapter" class="btn btn-link btn-sm mt-1">+ Добавить главу</button>
+                        </div>
+
+                        <div class="divider"></div>
+
+                        <div class="legend-box">
+                            <h4 class="legend-title">Типы сносок в тексте:</h4>
+                            <ul class="legend-items">
+                                <li><span class="highlight-sample sample-slang"></span> Сленг и жаргон</li>
+                                <li><span class="highlight-sample sample-metaphor"></span> Авторская метафора</li>
+                                <li><span class="highlight-sample sample-idiom"></span> Идиома / Фразеологизм</li>
+                                <li><span class="highlight-sample sample-allusion"></span> Аллюзия и подтекст</li>
+                                <li><span class="highlight-sample sample-cultural"></span> Культурный контекст</li>
+                            </ul>
+                            <p class="legend-hint">Кликните по выделенному слову в тексте для просмотра комментария литературоведа.</p>
+                        </div>
+
+                        <div class="divider"></div>
+
+                        <div class="theme-switcher-box">
+                            <label class="control-label">Цвет страницы:</label>
+                            <div class="theme-buttons">
+                                <button class="theme-btn theme-btn-paper active" data-theme="theme-paper" title="Светлая бумага">Аа</button>
+                                <button class="theme-btn theme-btn-sepia" data-theme="theme-sepia" title="Теплая сепия">Аа</button>
+                                <button class="theme-btn theme-btn-night" data-theme="theme-night" title="Ночной режим">Аа</button>
+                            </div>
+                        </div>
+                    </div>
+                </aside>
+
+                <article class="reader-book-page card">
+                    <div class="page-header">
+                        <div class="page-title-box">
+                            <span class="chapter-number-label" id="current-chapter-num">Глава 1</span>
+                            <h1 id="current-chapter-title" class="chapter-heading">The Green Light and Moral Scorn</h1>
+                        </div>
+                        <div class="page-toolbar">
+                            <div class="font-size-controls">
+                                <button id="btn-font-smaller" class="btn-tool" title="Уменьшить шрифт">A-</button>
+                                <span id="font-size-display" class="font-size-val">18px</span>
+                                <button id="btn-font-larger" class="btn-tool" title="Увеличить шрифт">A+</button>
+                            </div>
+                            <button id="btn-create-note-from-selection" class="btn btn-secondary btn-sm" title="Выделите текст и добавьте к нему объяснение">
+                                ✍ Добавить сноску к выделенному
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="reader-content" class="book-body-text book-typography">
+                        <div class="empty-state">Загрузка текста...</div>
+                    </div>
+
+                    <div class="page-footer">
+                        <span id="page-footer-stats">Статистика: ...</span>
+                    </div>
+                </article>
+
+                <aside class="reader-annotation-col">
+                    <div id="insight-panel" class="card footnote-card">
+                        <div class="footnote-placeholder" id="footnote-placeholder">
+                            <div class="placeholder-icon">📌</div>
+                            <h4>Примечания на полях</h4>
+                            <p>Нажмите на любое подчёркнутое слово в тексте книги, чтобы открыть разбор скрытого смысла и контекста.</p>
+                        </div>
+
+                        <div class="footnote-content" id="footnote-active-content" style="display: none;">
+                            <div class="footnote-header">
+                                <span class="badge-type" id="insight-badge">Сленг</span>
+                                <button id="btn-close-insight" class="btn-icon-close" title="Закрыть сноску">&times;</button>
+                            </div>
+                            <h3 id="insight-phrase" class="footnote-phrase">old sport</h3>
+                            
+                            <blockquote id="insight-quote" class="footnote-quote">
+                                «Don't mention it, old sport»
+                            </blockquote>
+
+                            <div class="footnote-body">
+                                <span class="footnote-label">Комментарий и скрытый смысл:</span>
+                                <p id="insight-explanation" class="footnote-explanation"></p>
+                            </div>
+
+                            <div class="footnote-actions">
+                                <button id="btn-edit-insight" class="btn btn-outline btn-sm">Редактировать</button>
+                                <button id="btn-delete-insight" class="btn btn-outline-danger btn-sm">Удалить</button>
+                            </div>
+                        </div>
+                    </div>
+                </aside>
+            </div>
+        </section>
+
+        <section id="tab-library" class="tab-pane">
+            <div class="section-header">
+                <div>
+                    <h2 class="section-title">Библиотека произведений</h2>
+                    <p class="section-desc">Каталог книг для углубленного чтения в оригинале</p>
+                </div>
+                <div class="section-actions">
+                    <div class="search-input-wrapper">
+                        <input type="text" id="book-search" class="form-input search-input" placeholder="Поиск по названию или автору...">
+                        <button id="btn-search-books" class="btn btn-secondary">Найти</button>
+                    </div>
+                    <button id="btn-add-book" class="btn btn-primary">+ Добавить книгу</button>
+                </div>
+            </div>
+
+            <div id="books-grid" class="books-grid">
+            </div>
+        </section>
+
+        <section id="tab-annotations" class="tab-pane">
+            <div class="section-header">
+                <div>
+                    <h2 class="section-title">Словарь контекстных сносок</h2>
+                    <p class="section-desc">Полный реестр объяснений сленга, авторских метафор и идиом</p>
+                </div>
+                <div class="section-actions">
+                    <select id="filter-annotation-book" class="form-select auto-width">
+                        <option value="">Все книги</option>
+                    </select>
+                    <select id="filter-annotation-type" class="form-select auto-width">
+                        <option value="">Все типы анализа</option>
+                        <option value="SLANG">Сленг / Жаргон</option>
+                        <option value="METAPHOR">Авторская метафора</option>
+                        <option value="IDIOM">Идиома / Фразеологизм</option>
+                        <option value="ALLUSION">Аллюзия / Подтекст</option>
+                        <option value="CULTURAL_CONTEXT">Культурный контекст</option>
+                    </select>
+                    <button id="btn-add-annotation" class="btn btn-primary">+ Новая сноска</button>
+                </div>
+            </div>
+
+            <div class="card table-card">
+                <table class="classic-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 20%;">Фраза / Выражение</th>
+                            <th style="width: 15%;">Категория</th>
+                            <th style="width: 35%;">Объяснение контекста и подтекста</th>
+                            <th style="width: 20%;">Цитата из книги</th>
+                            <th style="width: 10%; text-align: right;">Действия</th>
+                        </tr>
+                    </thead>
+                    <tbody id="annotations-table-body">
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <div id="modal-book" class="modal">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3 id="modal-book-title" class="modal-title">Добавить книгу</h3>
+                    <button class="modal-close">&times;</button>
+                </div>
+                <form id="form-book">
+                    <input type="hidden" id="book-form-id">
+                    <div class="modal-body">
+                        <div class="form-group">
+                            <label for="book-title" class="control-label">Название произведения *</label>
+                            <input type="text" id="book-title" required class="form-input" placeholder="The Great Gatsby">
+                        </div>
+                        <div class="form-group">
+                            <label for="book-author" class="control-label">Автор *</label>
+                            <input type="text" id="book-author" required class="form-input" placeholder="F. Scott Fitzgerald">
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group col-6">
+                                <label for="book-genre" class="control-label">Жанр</label>
+                                <input type="text" id="book-genre" class="form-input" placeholder="Classic Literature">
+                            </div>
+                            <div class="form-group col-6">
+                                <label for="book-language" class="control-label">Язык оригинала</label>
+                                <input type="text" id="book-language" class="form-input" value="en">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="book-cover" class="control-label">URL обложки</label>
+                            <input type="url" id="book-cover" class="form-input" placeholder="https://...">
+                        </div>
+                        <div class="form-group">
+                            <label for="book-desc" class="control-label">Аннотация книги</label>
+                            <textarea id="book-desc" rows="3" class="form-input" placeholder="Краткое описание сюжета и контекста эпохи..."></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary modal-cancel">Отмена</button>
+                        <button type="submit" class="btn btn-primary">Сохранить</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-chapter" class="modal">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3 id="modal-chapter-title" class="modal-title">Добавить главу</h3>
+                    <button class="modal-close">&times;</button>
+                </div>
+                <form id="form-chapter">
+                    <input type="hidden" id="chapter-form-id">
+                    <div class="modal-body">
+                        <div class="form-row">
+                            <div class="form-group col-3">
+                                <label for="chapter-number" class="control-label">Номер главы *</label>
+                                <input type="number" id="chapter-number" required min="1" value="1" class="form-input">
+                            </div>
+                            <div class="form-group col-9">
+                                <label for="chapter-title" class="control-label">Название главы *</label>
+                                <input type="text" id="chapter-title" required class="form-input" placeholder="Chapter 1: The Green Light">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="chapter-content" class="control-label">Оригинальный текст произведения *</label>
+                            <textarea id="chapter-content" rows="12" required class="form-input font-serif" placeholder="Вставьте сюда текст главы на языке оригинала..."></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary modal-cancel">Отмена</button>
+                        <button type="submit" class="btn btn-primary">Сохранить главу</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-annotation" class="modal">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3 id="modal-annotation-title" class="modal-title">Добавить сноску литературоведа</h3>
+                    <button class="modal-close">&times;</button>
+                </div>
+                <form id="form-annotation">
+                    <input type="hidden" id="annotation-form-id">
+                    <div class="modal-body">
+                        <div class="form-group">
+                            <label for="annotation-book-id" class="control-label">Книга *</label>
+                            <select id="annotation-book-id" required class="form-select"></select>
+                        </div>
+                        <div class="form-group">
+                            <label for="annotation-chapter-id" class="control-label">Глава</label>
+                            <select id="annotation-chapter-id" class="form-select">
+                                <option value="">(Общая для книги)</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="annotation-target" class="control-label">Слово, сленг или метафора в тексте *</label>
+                            <input type="text" id="annotation-target" required class="form-input" placeholder="old sport">
+                        </div>
+                        <div class="form-group">
+                            <label for="annotation-type" class="control-label">Категория фигуры речи *</label>
+                            <select id="annotation-type" required class="form-select">
+                                <option value="SLANG">Сленг / Жаргонизм</option>
+                                <option value="METAPHOR">Авторская метафора</option>
+                                <option value="IDIOM">Идиома / Фразеологизм</option>
+                                <option value="ALLUSION">Аллюзия / Подтекст</option>
+                                <option value="CULTURAL_CONTEXT">Культурный контекст</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="annotation-explanation" class="control-label">Пояснение скрытого смысла и подтекста *</label>
+                            <textarea id="annotation-explanation" rows="4" required class="form-input" placeholder="Раскройте авторский замысел, подтекст, исторические реалии..."></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="annotation-snippet" class="control-label">Цитата из текста (контекст)</label>
+                            <textarea id="annotation-snippet" rows="2" class="form-input" placeholder="Предложение, в котором встречается фраза..."></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary modal-cancel">Отмена</button>
+                        <button type="submit" class="btn btn-primary">Сохранить сноску</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <footer class="app-footer">
+        <div class="footer-container">
+            <span><b>Deep Reader</b> — Инструмент осознанного чтения классической и современной прозы</span>
+            <span>REST API &bull; 12-Factor App</span>
+        </div>
+    </footer>
+
+    <script src="app.js"></script>
+</body>
+</html>

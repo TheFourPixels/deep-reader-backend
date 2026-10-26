@@ -1,6 +1,5 @@
-﻿HELP.md
+HELP.md
 target/
-*.class
 .mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
 !**/src/test/**/target/
@@ -8,7 +7,6 @@ target/
 ### Archives ###
 *.zip
 *.env
-!.env.example
 
 ### STS ###
 .apt_generated
@@ -20,7 +18,7 @@ target/
 .sts4-cache
 
 ### IntelliJ IDEA ###
-.idea/
+.idea
 *.iws
 *.iml
 *.ipr
@@ -38,6 +36,6 @@ build/
 ### VS Code ###
 .vscode/
 
-### OS files ###
+*.class
 .DS_Store
-Thumbs.db
+

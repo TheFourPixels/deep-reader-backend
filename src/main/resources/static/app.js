@@ -502,7 +502,11 @@ async function handleChapterSubmit(e) {
 
 async function loadAllAnnotations() {
     try {
-        const res = await fetch(`${API_BASE}/annotations`);
+        if (!state.currentBook && state.books.length > 0) {
+            state.currentBook = state.books[0];
+        }
+        if (!state.currentBook) return;
+        const res = await fetch(`${API_BASE}/books/${state.currentBook.id}/annotations`);
         if (!res.ok) throw new Error('Ошибка загрузки сносок');
         state.allAnnotations = await res.json();
         renderAnnotationsTable(state.allAnnotations);
@@ -531,9 +535,20 @@ function renderAnnotationsTable(list) {
     `).join('');
 }
 
-function filterAnnotationsTable() {
+async function filterAnnotationsTable() {
     const bookId = dom.filterAnnotationBook.value;
     const type = dom.filterAnnotationType.value;
+
+    if (bookId) {
+        try {
+            const res = await fetch(`${API_BASE}/books/${bookId}/annotations`);
+            if (res.ok) {
+                state.allAnnotations = await res.json();
+            }
+        } catch (e) {
+            console.error(e);
+        }
+    }
 
     let filtered = state.allAnnotations;
     if (bookId) filtered = filtered.filter(a => a.bookId === Number(bookId));
@@ -586,8 +601,9 @@ async function openAnnotationModal(ann = null) {
 async function handleAnnotationSubmit(e) {
     e.preventDefault();
     const id = document.getElementById('annotation-form-id').value;
+    const bookId = Number(dom.annotationBookId.value);
+    
     const payload = {
-        bookId: Number(dom.annotationBookId.value),
         chapterId: dom.annotationChapterId.value ? Number(dom.annotationChapterId.value) : null,
         targetPhrase: dom.annotationTarget.value,
         type: dom.annotationType.value,
@@ -597,7 +613,9 @@ async function handleAnnotationSubmit(e) {
 
     try {
         const method = id ? 'PUT' : 'POST';
-        const url = id ? `${API_BASE}/annotations/${id}` : `${API_BASE}/annotations`;
+
+        const url = id ? `${API_BASE}/annotations/${id}` : `${API_BASE}/books/${bookId}/annotations`;
+
         const res = await fetch(url, {
             method,
             headers: { 'Content-Type': 'application/json' },

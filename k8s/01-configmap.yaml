@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: deep-reader-config
+  labels:
+    app.kubernetes.io/name: deep-reader
+    app.kubernetes.io/part-of: deep-reader-system
+data:
+  PORT: "8080"
+  DB_NAME: "deep_reader"
+  DB_USERNAME: "deep_user"
+  DB_HOST: "deep-reader-db"
+  DB_PORT: "5432"
+  SPRING_DATASOURCE_URL: "jdbc:postgresql://deep-reader-db:5432/deep_reader"
+  SPRING_DATASOURCE_USERNAME: "deep_user"
+  SPRING_JPA_HIBERNATE_DDL_AUTO: "update"
+  DB_POOL_MAX: "10"
+  DB_POOL_MIN: "2"
+  SHOW_SQL: "false"
+  LOG_LEVEL: "INFO"

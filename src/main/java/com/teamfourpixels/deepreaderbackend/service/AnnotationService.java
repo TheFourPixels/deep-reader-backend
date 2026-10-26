@@ -2,6 +2,7 @@ package com.teamfourpixels.deepreaderbackend.service;
 
 import com.teamfourpixels.deepreaderbackend.dto.AnnotationDto;
 import com.teamfourpixels.deepreaderbackend.dto.AnnotationRequest;
+import com.teamfourpixels.deepreaderbackend.metrics.DeepReaderMetrics;
 import com.teamfourpixels.deepreaderbackend.model.Annotation;
 import com.teamfourpixels.deepreaderbackend.model.AnnotationType;
 import com.teamfourpixels.deepreaderbackend.model.Book;
@@ -14,6 +15,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Duration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -28,13 +30,16 @@ public class AnnotationService {
     private final AnnotationRepository annotationRepository;
     private final BookRepository bookRepository;
     private final ChapterRepository chapterRepository;
+    private final DeepReaderMetrics metrics;
 
     public AnnotationService(AnnotationRepository annotationRepository,
                              BookRepository bookRepository,
-                             ChapterRepository chapterRepository) {
+                             ChapterRepository chapterRepository,
+                             DeepReaderMetrics metrics) {
         this.annotationRepository = annotationRepository;
         this.bookRepository = bookRepository;
         this.chapterRepository = chapterRepository;
+        this.metrics = metrics;
     }
 
     @Transactional(readOnly = true)
@@ -71,6 +76,7 @@ public class AnnotationService {
     }
 
     public AnnotationDto create(Long bookId, AnnotationRequest request) {
+        long startNanos = System.nanoTime();
         if (!bookRepository.existsById(bookId)) {
             log.atError().log("Попытка создания сноски: книга с ID {} не найдена", bookId);
             throw new NoSuchElementException("Книга с ID " + bookId + " не найдена");
@@ -96,6 +102,9 @@ public class AnnotationService {
         );
 
         Annotation saved = annotationRepository.save(annotation);
+        metrics.recordAnnotationCreated(saved.getType().name(), saved.getChapter() != null);
+        metrics.recordAnnotationCreationDuration(Duration.ofNanos(System.nanoTime() - startNanos));
+
         log.atInfo().log("Создана новая контекстная сноска ID={}: фраза='{}', тип={}, книга ID={}",
                 saved.getId(), saved.getTargetPhrase(), saved.getType(), bookId);
         return toDto(saved);

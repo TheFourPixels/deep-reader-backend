@@ -2,6 +2,7 @@ package com.teamfourpixels.deepreaderbackend.service;
 
 import com.teamfourpixels.deepreaderbackend.dto.BookDto;
 import com.teamfourpixels.deepreaderbackend.dto.BookRequest;
+import com.teamfourpixels.deepreaderbackend.metrics.DeepReaderMetrics;
 import com.teamfourpixels.deepreaderbackend.model.Book;
 import com.teamfourpixels.deepreaderbackend.repository.BookRepository;
 import org.slf4j.Logger;
@@ -19,14 +20,17 @@ public class BookService {
     private static final Logger log = LoggerFactory.getLogger(BookService.class);
 
     private final BookRepository bookRepository;
+    private final DeepReaderMetrics metrics;
 
-    public BookService(BookRepository bookRepository) {
+    public BookService(BookRepository bookRepository, DeepReaderMetrics metrics) {
         this.bookRepository = bookRepository;
+        this.metrics = metrics;
     }
 
     @Transactional(readOnly = true)
     public List<BookDto> findAll(String query) {
         if (query != null && !query.trim().isEmpty()) {
+            metrics.recordBookSearch();
             log.atInfo().log("Поиск книг по поисковому запросу: '{}'", query.trim());
             return bookRepository.searchAsDto(query.trim());
         }
@@ -52,6 +56,7 @@ public class BookService {
                 request.coverUrl() != null ? request.coverUrl().trim() : null
         );
         Book saved = bookRepository.save(book);
+        metrics.recordBookCreated(saved.getLanguage());
         log.atInfo().log("В библиотеку успешно добавлена новая книга: ID={}, «{}» ({})", saved.getId(), saved.getTitle(), saved.getAuthor());
         return new BookDto(
                 saved.getId(),

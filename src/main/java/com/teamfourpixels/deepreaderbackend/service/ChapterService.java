@@ -2,6 +2,7 @@ package com.teamfourpixels.deepreaderbackend.service;
 
 import com.teamfourpixels.deepreaderbackend.dto.ChapterDto;
 import com.teamfourpixels.deepreaderbackend.dto.ChapterRequest;
+import com.teamfourpixels.deepreaderbackend.metrics.DeepReaderMetrics;
 import com.teamfourpixels.deepreaderbackend.model.Book;
 import com.teamfourpixels.deepreaderbackend.model.Chapter;
 import com.teamfourpixels.deepreaderbackend.repository.AnnotationRepository;
@@ -24,13 +25,16 @@ public class ChapterService {
     private final ChapterRepository chapterRepository;
     private final BookRepository bookRepository;
     private final AnnotationRepository annotationRepository;
+    private final DeepReaderMetrics metrics;
 
     public ChapterService(ChapterRepository chapterRepository,
                           BookRepository bookRepository,
-                          AnnotationRepository annotationRepository) {
+                          AnnotationRepository annotationRepository,
+                          DeepReaderMetrics metrics) {
         this.chapterRepository = chapterRepository;
         this.bookRepository = bookRepository;
         this.annotationRepository = annotationRepository;
+        this.metrics = metrics;
     }
 
     @Transactional(readOnly = true)
@@ -52,6 +56,7 @@ public class ChapterService {
                     log.atError().log("Попытка получения главы: глава с ID {} не найдена", id);
                     return new NoSuchElementException("Глава с ID " + id + " не найдена");
                 });
+        metrics.recordChapterRead(chapter.getBook().getId());
         return toDto(chapter);
     }
 

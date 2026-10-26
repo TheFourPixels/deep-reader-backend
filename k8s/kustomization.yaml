@@ -1,7 +1,10 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
+namespace: deep-reader
+
 resources:
+  - 00-namespace.yaml
   - 01-configmap.yaml
   - 02-secret.yaml
   - 03-postgres-pvc.yaml
@@ -9,3 +12,7 @@ resources:
   - 05-postgres-service.yaml
   - 06-app-deployment.yaml
   - 07-app-service.yaml
+  - 08-victoria-logs.yaml
+  - 09-vector.yaml
+  - 10-grafana.yaml
+  - 11-vmalert.yaml

@@ -1,0 +1,146 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: vector
+  labels:
+    app.kubernetes.io/name: vector
+    app.kubernetes.io/part-of: deep-reader-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: vector
+  labels:
+    app.kubernetes.io/name: vector
+    app.kubernetes.io/part-of: deep-reader-system
+rules:
+  - apiGroups: [""]
+    resources: ["pods", "namespaces", "nodes"]
+    verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: vector
+  labels:
+    app.kubernetes.io/name: vector
+    app.kubernetes.io/part-of: deep-reader-system
+subjects:
+  - kind: ServiceAccount
+    name: vector
+    namespace: deep-reader
+roleRef:
+  kind: ClusterRole
+  name: vector
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: vector-config
+  labels:
+    app.kubernetes.io/name: vector
+    app.kubernetes.io/part-of: deep-reader-system
+data:
+  vector.yaml: |
+    data_dir: /var/lib/vector
+
+    sources:
+      kubernetes_logs:
+        type: kubernetes_logs
+
+    transforms:
+      app_logs:
+        type: filter
+        inputs:
+          - kubernetes_logs
+        condition: '.kubernetes.pod_namespace == "deep-reader" && .kubernetes.pod_labels.app == "deep-reader-app"'
+
+      parse_json:
+        type: remap
+        inputs:
+          - app_logs
+        source: |
+          parsed, err = parse_json(.message)
+          if err == null {
+            del(.message)
+            . = merge!(., parsed)
+          }
+          if !exists(.service) {
+            .service = "deep-reader-backend"
+          }
+          if !exists(.stream) {
+            .stream = "stdout"
+          }
+          if exists(.timestamp) && !exists(."@timestamp") {
+            ."@timestamp" = .timestamp
+          }
+
+    sinks:
+      victoria_logs:
+        type: http
+        inputs:
+          - parse_json
+        uri: "http://victoria-logs.deep-reader.svc.cluster.local:9428/insert/jsonline?_stream_fields=stream,service,level&_msg_field=message&_time_field=timestamp"
+        encoding:
+          codec: json
+        framing:
+          method: newline_delimited
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: vector
+  labels:
+    app: vector
+    app.kubernetes.io/name: vector
+    app.kubernetes.io/part-of: deep-reader-system
+spec:
+  selector:
+    matchLabels:
+      app: vector
+  template:
+    metadata:
+      labels:
+        app: vector
+    spec:
+      serviceAccountName: vector
+      containers:
+        - name: vector
+          image: timberio/vector:latest-alpine
+          imagePullPolicy: IfNotPresent
+          args:
+            - --config
+            - /etc/vector/vector.yaml
+          env:
+            - name: VECTOR_SELF_NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+          securityContext:
+            runAsUser: 0
+          volumeMounts:
+            - name: config
+              mountPath: /etc/vector
+              readOnly: true
+            - name: var-log
+              mountPath: /var/log
+              readOnly: true
+            - name: data
+              mountPath: /var/lib/vector
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 250m
+              memory: 256Mi
+      volumes:
+        - name: config
+          configMap:
+            name: vector-config
+        - name: var-log
+          hostPath:
+            path: /var/log
+        - name: data
+          emptyDir: {}

@@ -10,7 +10,8 @@ Deep Reader решает проблему буквального словарн�
 - **Frontend:** SPA (HTML5, CSS3, ES6 JavaScript) без тяжёлых зависимостей (Node.js/npm не требуются), раздаётся встроенным сервером приложения по протоколу HTTP/1.1 REST.
 - **Database:** PostgreSQL 16.
 - **Testing:** JUnit 5, Spring Boot Test, MockMvc, Testcontainers
-- **Инфраструктура:** Docker, Docker Compose, Multi‑stage Dockerfile.
+- **Инфраструктура:** Docker, Docker Compose, Multi‑stage Dockerfile, Kubernetes (Minikube).
+- **Логирование и наблюдаемость:** Victoria Logs, Vector (DaemonSet), Grafana (плагин VictoriaLogs).
 
 ---
 
@@ -58,7 +59,6 @@ eval $(minikube docker-env)
 
 #### Сборка образа
 ```bash
-
 docker build -t deep-reader-app:latest .
 ```
 *Если вы предпочитаете собрать образ локально, используйте `docker build -t deep-reader-app:latest .` и затем загрузите его в Minikube:* 
@@ -85,13 +85,35 @@ kubectl get pods
 ```
 Можно увидеть три пода `deep-reader-app`
 
-#### Шаг 7. Доступ к UI приложения
+#### Доступ к UI приложения
 ```bash
 minikube service deep-reader-app  -  откроет браузер по http://<minikube‑ip>:30080
 
 kubectl port-forward service/deep-reader-app 8080:8080
 ```
 Приложение будет доступно по адресу **http://localhost:8080**
+
+---
+
+### Централизованное логирование (Victoria Logs & Vector & Grafana)
+
+Система логирования развёрнута в том же кластере:
+- **Victoria Logs:** единое высокопроизводительное хранилище логов с веб-интерфейсом `vmui`.
+- **Vector (DaemonSet):** агент сбора логов с хоста Kubernetes (`/var/log/pods`), автоматический парсинг JSON из `stdout` приложения и пересылка в Victoria Logs (`/insert/jsonline`).
+- **Grafana:** визуализация логов с предустановленным официальным плагином `victoriametrics-logs-datasource`.
+
+#### Доступ к интерфейсам логирования:
+```bash
+# Веб-интерфейс Victoria Logs (vmui):
+kubectl port-forward service/victoria-logs 9428:9428
+# Открыть в браузере: http://localhost:9428/select/vmui/
+
+# Grafana (Explore с источником VictoriaLogs):
+kubectl port-forward service/grafana 3000:3000
+# Открыть в браузере: http://localhost:3000/explore
+```
+
+Подробное описание архитектуры, выбор шиппера и разбор 4 запросов LogsQL приведены в [Отчёт.md](Отчёт.md).
 
 ---
 
@@ -136,6 +158,6 @@ kubectl port-forward service/deep-reader-app 8080:8080
 
 ## Примечания
 - Порт, на котором слушает Spring Boot, задаётся переменной окружения `PORT`, по умолчанию `8080`. В манифесте `ConfigMap`‑а задаётся `PORT: "8080"` и Service `deep-reader-app` открывается как `NodePort` 30080.
-- Секреты  хранятся в `Secret` `deep-reader-secret`. При работе в продакшн‑окружении используются **Sealed Secrets**, но тк это тестовый проект, то пока что прросто секреты :)
+- Секреты хранятся в `Secret` `deep-reader-secret`. При работе в продакшн‑окружении используются **Sealed Secrets**, но тк это тестовый проект, то пока что просто секреты :)
 
 ---

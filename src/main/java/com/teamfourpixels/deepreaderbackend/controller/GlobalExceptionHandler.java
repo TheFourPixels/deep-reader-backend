@@ -51,7 +51,9 @@ public class GlobalExceptionHandler {
             errors.put(error.getField(), error.getDefaultMessage());
         }
 
-        log.atError().log("Ошибка валидации входящих данных запроса: {}", errors);
+        log.atError()
+           .setCause(ex)
+           .log("Failed to create book: validation failed");
 
         Map<String, Object> body = new HashMap<>();
         body.put("timestamp", Instant.now().toString());
@@ -63,7 +65,9 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<Map<String, Object>> handleBadRequest(IllegalArgumentException ex) {
-        log.atError().log("Некорректный запрос клиента: {}", ex.getMessage());
+        log.atError()
+           .setCause(ex)
+           .log("Некорректный запрос клиента: {}", ex.getMessage());
 
         Map<String, Object> body = new HashMap<>();
         body.put("timestamp", Instant.now().toString());

@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder class="ch.qos.logback.core.encoder.LayoutWrappingEncoder">
+            <layout class="com.teamfourpixels.deepreaderbackend.config.CustomJsonLayout">
+                <serviceName>deep-reader-backend</serviceName>
+            </layout>
+        </encoder>
+    </appender>
+
+    <root level="INFO">
+        <appender-ref ref="CONSOLE"/>
+    </root>
+
+    <logger name="com.teamfourpixels.deepreaderbackend" level="${LOG_LEVEL:-INFO}"/>
+</configuration>

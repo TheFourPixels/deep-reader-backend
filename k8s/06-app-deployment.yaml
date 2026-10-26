@@ -20,6 +20,10 @@ spec:
     metadata:
       labels:
         app: deep-reader-app
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8080"
+        prometheus.io/path: "/actuator/prometheus"
     spec:
       containers:
         - name: deep-reader-app
@@ -28,6 +32,8 @@ spec:
           ports:
             - containerPort: 8080
               name: http
+            - containerPort: 8080
+              name: metrics
           envFrom:
             - configMapRef:
                 name: deep-reader-config

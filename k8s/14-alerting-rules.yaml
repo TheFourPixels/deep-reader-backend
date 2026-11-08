@@ -1,0 +1,82 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: alerting-rules
+  namespace: deep-reader
+  labels:
+    app.kubernetes.io/name: alerting-rules
+    app.kubernetes.io/part-of: deep-reader-system
+data:
+  alerting-rules.yaml: |
+    groups:
+      - name: deep-reader-business-alerts
+        interval: 5s
+        rules:
+          - alert: DeepReaderHigh5xxErrorRate
+            expr: (sum(rate(http_server_requests_seconds_count{status=~"5..", uri=~"/api/.*"}[1m])) / clamp_min(sum(rate(http_server_requests_seconds_count{uri=~"/api/.*"}[1m])), 0.001)) * 100 > 1
+            for: 10s
+            labels:
+              severity: critical
+              tier: business
+              service: deep-reader-app
+            annotations:
+              summary: "Высокая доля ошибок 5xx на API Deep Reader (> 1%)"
+              description: "Доля HTTP 5xx ответов составляет {{ $value | printf \"%.2f\" }}% при пороге 1%. Пользователи получают ошибки при чтении или создании аннотаций."
+
+          - alert: DeepReaderHighAnnotationLatency
+            expr: (rate(deepreader_annotation_create_duration_seconds_sum[1m]) / clamp_min(rate(deepreader_annotation_create_duration_seconds_count[1m]), 0.001)) > 0.3
+            for: 10s
+            labels:
+              severity: warning
+              tier: business
+              service: deep-reader-app
+            annotations:
+              summary: "Высокое время создания аннотаций (> 300ms)"
+              description: "Среднее время создания аннотации читателем превысило 300мс (текущее: {{ $value | printf \"%.3f\" }}s)."
+
+          - alert: DeepReaderHighApiLatency
+            expr: (sum(rate(http_server_requests_seconds_sum{uri=~"/api/.*"}[1m])) / clamp_min(sum(rate(http_server_requests_seconds_count{uri=~"/api/.*"}[1m])), 0.001)) > 0.3
+            for: 10s
+            labels:
+              severity: warning
+              tier: business
+              service: deep-reader-app
+            annotations:
+              summary: "Высокая задержка HTTP-запросов к API Deep Reader (> 300ms)"
+              description: "Среднее время обработки API-запросов составляет {{ $value | printf \"%.3f\" }}s (порог 0.3s). Наблюдается деградация отзывчивости сервиса."
+
+      - name: deep-reader-runtime-alerts
+        interval: 5s
+        rules:
+          - alert: JvmMemoryHeapHigh
+            expr: (sum(jvm_memory_used_bytes{area="heap"}) / sum(jvm_memory_max_bytes{area="heap"} > 0)) * 100 > 80
+            for: 10s
+            labels:
+              severity: critical
+              tier: runtime
+              service: deep-reader-app
+            annotations:
+              summary: "Критическое заполнение JVM Heap (> 80%)"
+              description: "Использование кучи JVM превысило 80% (текущее: {{ $value | printf \"%.2f\" }}%). Риск OutOfMemoryError."
+
+          - alert: JvmMemoryHeapWarning
+            expr: (sum(jvm_memory_used_bytes{area="heap"}) / sum(jvm_memory_max_bytes{area="heap"} > 0)) * 100 > 25
+            for: 10s
+            labels:
+              severity: warning
+              tier: runtime
+              service: deep-reader-app
+            annotations:
+              summary: "Повышенное использование памяти JVM Heap (> 25%)"
+              description: "Использование кучи JVM превышает 25% (текущее: {{ $value | printf \"%.2f\" }}%)."
+
+          - alert: HikariCPConnectionPoolExhaustion
+            expr: (hikaricp_connections_active{pool="HikariPool-1"} / hikaricp_connections_max{pool="HikariPool-1"}) * 100 > 80
+            for: 10s
+            labels:
+              severity: critical
+              tier: runtime
+              service: deep-reader-app
+            annotations:
+              summary: "Исчерпание пула коннектов HikariCP к PostgreSQL (> 80%)"
+              description: "Пул соединений с БД исчерпан на {{ $value | printf \"%.2f\" }}%. Потоки сервиса блокируются в ожидании соединения."

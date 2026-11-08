@@ -1,6 +1,6 @@
-# Deep Reader — Читалка с AI‑анализом сленга, метафор и скрытого подтекста
+# Deep Reader — Читалка с AI-анализом сленга, метафор и скрытого подтекста
 
-Клиент‑серверное веб‑приложение, разработанное в строгом соответствии с методологией **The Twelve‑Factor App (12 факторов)**.
+Клиент-серверное веб-приложение, разработанное в строгом соответствии с методологией **The Twelve-Factor App (12 факторов)**.
 
 ## О проекте
 Deep Reader решает проблему буквального словарного перевода художественной прозы. Сервис анализирует контекст произведений и предоставляет читателю интерактивные объяснения сленга, авторских метафор, идиом и скрытого подтекста при чтении оригинального текста.
@@ -10,7 +10,7 @@ Deep Reader решает проблему буквального словарн�
 - **Frontend:** SPA (HTML5, CSS3, ES6 JavaScript) без тяжёлых зависимостей (Node.js/npm не требуются), раздаётся встроенным сервером приложения по протоколу HTTP/1.1 REST.
 - **Database:** PostgreSQL 16.
 - **Testing:** JUnit 5, Spring Boot Test, MockMvc, Testcontainers
-- **Инфраструктура:** Docker, Docker Compose, Multi‑stage Dockerfile, Kubernetes (Minikube).
+- **Инфраструктура:** Docker, Docker Compose, Multi-stage Dockerfile, Kubernetes (Minikube).
 - **Логирование и наблюдаемость:** Victoria Logs, Vector (DaemonSet), Grafana (плагин VictoriaLogs).
 
 ---
@@ -23,7 +23,7 @@ Deep Reader решает проблему буквального словарн�
 ```bash
 docker compose up --build
 ```
-После старта веб‑интерфейс доступен в браузере по адресу:
+После старта веб-интерфейс доступен в браузере по адресу:
 **[http://localhost:8080](http://localhost:8080)**
 
 ---
@@ -46,7 +46,7 @@ docker compose up --build
 minikube start --driver=docker
 ```
 
-#### Использование Docker‑демона Minikube
+#### Использование Docker-демона Minikube
 Для Windows PowerShell:
 ```powershell
 minikube docker-env | Invoke-Expression
@@ -78,7 +78,7 @@ kubectl get all
 kubectl get pods -w 
 ```
 
-#### Масштабирование backend‑приложения
+#### Масштабирование backend-приложения
 ```bash
 kubectl scale deployment deep-reader-app --replicas=3
 kubectl get pods
@@ -87,7 +87,7 @@ kubectl get pods
 
 #### Доступ к UI приложения
 ```bash
-minikube service deep-reader-app  -  откроет браузер по http://<minikube‑ip>:30080
+minikube service deep-reader-app  -  откроет браузер по http://<minikube-ip>:30080
 
 kubectl port-forward service/deep-reader-app 8080:8080
 ```
@@ -129,7 +129,7 @@ kubectl port-forward service/grafana 3000:3000
 ## REST API эндпоинты
 
 ### Книги (`/api/books`)
-- `GET /api/books` — получить список книг (поддерживает `?search=…`)
+- `GET /api/books` — получить список книг (поддерживает `?search=...`)
 - `GET /api/books/{id}` — получить книгу по ID
 - `POST /api/books` — создать книгу
 - `PUT /api/books/{id}` — обновить книгу
@@ -157,7 +157,7 @@ kubectl port-forward service/grafana 3000:3000
 ---
 
 ## Примечания
-- Порт, на котором слушает Spring Boot, задаётся переменной окружения `PORT`, по умолчанию `8080`. В манифесте `ConfigMap`‑а задаётся `PORT: "8080"` и Service `deep-reader-app` открывается как `NodePort` 30080.
-- Секреты хранятся в `Secret` `deep-reader-secret`. При работе в продакшн‑окружении используются **Sealed Secrets**, но тк это тестовый проект, то пока что просто секреты :)
+- Порт, на котором слушает Spring Boot, задаётся переменной окружения `PORT`, по умолчанию `8080`. В манифесте `ConfigMap`-а задаётся `PORT: "8080"` и Service `deep-reader-app` открывается как `NodePort` 30080.
+- Секреты хранятся в `Secret` `deep-reader-secret`. При работе в продакшн-окружении используются **Sealed Secrets**, но тк это тестовый проект, то пока что просто секреты :)
 
 ---

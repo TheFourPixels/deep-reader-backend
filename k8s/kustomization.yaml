@@ -16,6 +16,8 @@ resources:
   - 10-grafana.yaml
   - 11-vmalert.yaml
   - 12-prober.yaml
+  - 13-alertmanager.yaml
+  - 14-alerting-rules.yaml
 
 configMapGenerator:
   - name: grafana-slo-dashboard-json

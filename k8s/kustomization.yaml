@@ -1,6 +1,5 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
-
 namespace: deep-reader
 
 resources:
@@ -16,3 +15,12 @@ resources:
   - 09-vector.yaml
   - 10-grafana.yaml
   - 11-vmalert.yaml
+  - 12-prober.yaml
+
+configMapGenerator:
+  - name: grafana-slo-dashboard-json
+    files:
+      - slo-dashboard.json=monitoring/grafana-slo-dashboard.json
+
+generatorOptions:
+  disableNameSuffixHash: true

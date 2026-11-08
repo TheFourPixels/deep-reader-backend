@@ -1,7 +1,9 @@
 spring:
   datasource:
-    url: jdbc:testcontainers:postgresql:16-alpine:///deep_reader_test?loggerLevel=OFF
-    driver-class-name: org.testcontainers.jdbc.ContainerDatabaseDriver
+    url: jdbc:postgresql://127.0.0.1:5435/deep_reader_test
+    username: postgres
+    password: postgres
+    driver-class-name: org.postgresql.Driver
   liquibase:
     enabled: false
   jpa:

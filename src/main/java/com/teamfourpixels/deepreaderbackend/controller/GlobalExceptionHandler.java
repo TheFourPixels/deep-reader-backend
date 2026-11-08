@@ -53,35 +53,21 @@ public class GlobalExceptionHandler {
 
         log.atError()
            .setCause(ex)
-           .log("Failed to create book: validation failed");
+           .log("Validation failed for request: {}", errors);
 
         Map<String, Object> body = new HashMap<>();
         body.put("timestamp", Instant.now().toString());
         body.put("status", HttpStatus.BAD_REQUEST.value());
-        body.put("error", "Ошибка валидации");
-        body.put("validationErrors", errors);
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
-    }
-
-    @ExceptionHandler(IllegalArgumentException.class)
-    public ResponseEntity<Map<String, Object>> handleBadRequest(IllegalArgumentException ex) {
-        log.atError()
-           .setCause(ex)
-           .log("Некорректный запрос клиента: {}", ex.getMessage());
-
-        Map<String, Object> body = new HashMap<>();
-        body.put("timestamp", Instant.now().toString());
-        body.put("status", HttpStatus.BAD_REQUEST.value());
-        body.put("error", "Некорректный запрос");
-        body.put("message", ex.getMessage());
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
+        body.put("error", "Ошибка валидации входных данных");
+        body.put("errors", errors);
+        return ResponseEntity.badRequest().body(body);
     }
 
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<Map<String, Object>> handleGeneralError(Exception ex) {
+    public ResponseEntity<Map<String, Object>> handleAllOtherExceptions(Exception ex) {
         log.atError()
            .setCause(ex)
-           .log("Внутренняя непредвиденная ошибка сервера при обработке запроса: {}", ex.getMessage());
+           .log("Непредвиденное внутреннее исключение: {}", ex.getMessage());
 
         Map<String, Object> body = new HashMap<>();
         body.put("timestamp", Instant.now().toString());

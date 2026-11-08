@@ -30,7 +30,7 @@ public class SystemController {
     private final AnnotationService annotationService;
     private final JdbcTemplate jdbcTemplate;
 
-    @Value("${PORT}")
+    @Value("${PORT:8080}")
     private String serverPort;
 
     public SystemController(BookRepository bookRepository,

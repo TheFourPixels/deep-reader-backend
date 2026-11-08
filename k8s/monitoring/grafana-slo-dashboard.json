@@ -1,0 +1,227 @@
+{
+  "annotations": {
+    "list": []
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "liveNow": true,
+  "panels": [
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+      "id": 100,
+      "title": "Индикаторы доступности API",
+      "type": "row"
+    },
+    {
+      "id": 1,
+      "title": "RBSLO Доступность",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 1 },
+      "datasource": { "type": "prometheus", "uid": "VictoriaMetrics" },
+      "targets": [
+        {
+          "expr": "sum(rate(http_server_requests_seconds_count{status!~\"5..\", uri=~\"/api/.*\"}[1m])) / sum(rate(http_server_requests_seconds_count{uri=~\"/api/.*\"}[1m])) * 100",
+          "legendFormat": "SLI Availability",
+          "refId": "A"
+        },
+        {
+          "expr": "vector(99.5)",
+          "legendFormat": "SLO Target",
+          "refId": "B"
+        },
+        {
+          "expr": "vector(99.0)",
+          "legendFormat": "SLA Threshold",
+          "refId": "C"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "smooth",
+            "lineWidth": 2
+          },
+          "unit": "percent",
+          "min": 0,
+          "max": 105
+        }
+      }
+    },
+    {
+      "id": 2,
+      "title": "RBSLO Латентность",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 1 },
+      "datasource": { "type": "prometheus", "uid": "VictoriaMetrics" },
+      "targets": [
+        {
+          "expr": "sum(rate(http_server_requests_seconds_bucket{le=\"0.2\", uri=~\"/api/.*\"}[1m])) / sum(rate(http_server_requests_seconds_count{uri=~\"/api/.*\"}[1m])) * 100",
+          "legendFormat": "SLI Latency Compliance",
+          "refId": "A"
+        },
+        {
+          "expr": "vector(95.0)",
+          "legendFormat": "SLO Target",
+          "refId": "B"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "smooth",
+            "lineWidth": 2
+          },
+          "unit": "percent",
+          "min": 0,
+          "max": 105
+        }
+      }
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 9 },
+      "id": 101,
+      "title": "Поминутный анализ TBSLO",
+      "type": "row"
+    },
+    {
+      "id": 3,
+      "title": "TBSLO Статус минуты (0/1)",
+      "type": "timeseries",
+      "gridPos": { "h": 7, "w": 12, "x": 0, "y": 10 },
+      "datasource": { "type": "prometheus", "uid": "VictoriaMetrics" },
+      "targets": [
+        {
+          "expr": "(((sum(rate(http_server_requests_seconds_count{status!~\"5..\", uri=~\"/api/.*\"}[1m])) default 0) / (sum(rate(http_server_requests_seconds_count{uri=~\"/api/.*\"}[1m])) > 0) >= 0.995) and ((sum(rate(http_server_requests_seconds_sum{uri=~\"/api/.*\"}[1m])) default 0) / (sum(rate(http_server_requests_seconds_count{uri=~\"/api/.*\"}[1m])) > 0) <= 0.200)) or on() vector(0)",
+          "legendFormat": "Good Minute",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "bars",
+            "fillOpacity": 80
+          },
+          "min": 0,
+          "max": 1.2
+        }
+      }
+    },
+    {
+      "id": 4,
+      "title": "TBSLO Доступность",
+      "type": "timeseries",
+      "gridPos": { "h": 7, "w": 12, "x": 12, "y": 10 },
+      "datasource": { "type": "prometheus", "uid": "VictoriaMetrics" },
+      "targets": [
+        {
+          "expr": "avg_over_time((((sum(rate(http_server_requests_seconds_count{status!~\"5..\", uri=~\"/api/.*\"}[1m])) default 0) / (sum(rate(http_server_requests_seconds_count{uri=~\"/api/.*\"}[1m])) > 0) >= 0.995) and ((sum(rate(http_server_requests_seconds_sum{uri=~\"/api/.*\"}[1m])) default 0) / (sum(rate(http_server_requests_seconds_count{uri=~\"/api/.*\"}[1m])) > 0) <= 0.200) or on() vector(0))[30m]) * 100",
+          "legendFormat": "Cumulative TBSLO",
+          "refId": "A"
+        },
+        {
+          "expr": "vector(99.0)",
+          "legendFormat": "TBSLO Target",
+          "refId": "B"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 2
+          },
+          "unit": "percent",
+          "min": 0,
+          "max": 105
+        }
+      }
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 17 },
+      "id": 102,
+      "title": "Синтетический мониторинг и бюджет ошибок",
+      "type": "row"
+    },
+    {
+      "id": 5,
+      "title": "Пробер Доступность",
+      "type": "timeseries",
+      "gridPos": { "h": 7, "w": 12, "x": 0, "y": 18 },
+      "datasource": { "type": "prometheus", "uid": "VictoriaMetrics" },
+      "targets": [
+        {
+          "expr": "prober_availability_ratio",
+          "legendFormat": "Prober Availability",
+          "refId": "A"
+        },
+        {
+          "expr": "prober_latency_compliance_ratio",
+          "legendFormat": "Prober Latency Compliance",
+          "refId": "B"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 2
+          },
+          "unit": "percent",
+          "min": 0,
+          "max": 105
+        }
+      }
+    },
+    {
+      "id": 6,
+      "title": "Burn Rate",
+      "type": "timeseries",
+      "gridPos": { "h": 7, "w": 12, "x": 12, "y": 18 },
+      "datasource": { "type": "prometheus", "uid": "VictoriaMetrics" },
+      "targets": [
+        {
+          "expr": "(1 - (sum(rate(http_server_requests_seconds_count{status!~\"5..\", uri=~\"/api/.*\"}[1m])) / sum(rate(http_server_requests_seconds_count{uri=~\"/api/.*\"}[1m])))) / (1 - 0.995)",
+          "legendFormat": "Burn Rate",
+          "refId": "A"
+        },
+        {
+          "expr": "vector(1.0)",
+          "legendFormat": "Target",
+          "refId": "B"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 2
+          },
+          "min": 0
+        }
+      }
+    }
+  ],
+  "refresh": "5s",
+  "schemaVersion": 38,
+  "style": "dark",
+  "tags": ["sre", "slo", "sli", "deep-reader"],
+  "time": {
+    "from": "now-15m",
+    "to": "now"
+  },
+  "timepicker": {
+    "refresh_intervals": ["1s", "5s", "10s", "30s", "1m"]
+  },
+  "timezone": "browser",
+  "title": "Deep Reader — SLO & SLA Dashboard",
+  "version": 4
+}

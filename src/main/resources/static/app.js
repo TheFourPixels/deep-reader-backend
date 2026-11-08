@@ -72,6 +72,7 @@ const dom = {
 };
 
 document.addEventListener('DOMContentLoaded', () => {
+    initChaosWidget();
     applyTheme(state.theme);
     initEvents();
     checkHealth();
@@ -667,4 +668,62 @@ function escapeHtml(str) {
         .replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&#039;');
+}
+
+
+async function checkChaosStatus() {
+    try {
+        const res = await fetch(`${API_BASE}/chaos/status`);
+        if (res.ok) {
+            const data = await res.json();
+            const badge = document.getElementById('chaos-badge');
+            const btnFault = document.getElementById('btn-toggle-chaos');
+            const btnReset = document.getElementById('btn-reset-chaos');
+            if (badge && btnFault && btnReset) {
+                if (data.enabled) {
+                    badge.className = 'badge-status badge-chaos';
+                    badge.textContent = `Сбой активен (${Math.round(data.errorRate * 100)}% 500, +${data.delayMs}ms)`;
+                    btnFault.style.display = 'none';
+                    btnReset.style.display = 'inline-block';
+                } else {
+                    badge.className = 'badge-status badge-normal';
+                    badge.textContent = 'Норма';
+                    btnFault.style.display = 'inline-block';
+                    btnReset.style.display = 'none';
+                }
+            }
+        }
+    } catch (e) {
+    }
+}
+
+async function triggerChaos() {
+    try {
+        const res = await fetch(`${API_BASE}/chaos/fault?errorRate=0.4&delayMs=500`, { method: 'POST' });
+        if (res.ok) {
+            await checkChaosStatus();
+        }
+    } catch (e) {
+        alert('Ошибка переключения сбоя: ' + e.message);
+    }
+}
+
+async function resetChaos() {
+    try {
+        const res = await fetch(`${API_BASE}/chaos/reset`, { method: 'POST' });
+        if (res.ok) {
+            await checkChaosStatus();
+        }
+    } catch (e) {
+        alert('Ошибка сброса сбоя: ' + e.message);
+    }
+}
+
+function initChaosWidget() {
+    const btnFault = document.getElementById('btn-toggle-chaos');
+    const btnReset = document.getElementById('btn-reset-chaos');
+    if (btnFault) btnFault.addEventListener('click', triggerChaos);
+    if (btnReset) btnReset.addEventListener('click', resetChaos);
+    checkChaosStatus();
+    setInterval(checkChaosStatus, 4000);
 }

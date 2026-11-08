@@ -2,6 +2,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: grafana-datasources
+  namespace: deep-reader
   labels:
     app.kubernetes.io/name: grafana
     app.kubernetes.io/part-of: deep-reader-system
@@ -13,13 +14,40 @@ data:
         type: victoriametrics-logs-datasource
         access: proxy
         url: http://victoria-logs.deep-reader.svc.cluster.local:9428
-        isDefault: true
+        isDefault: false
         jsonData: {}
+      - name: VictoriaMetrics
+        uid: VictoriaMetrics
+        type: prometheus
+        access: proxy
+        url: http://vm-single-victoria-metrics-single-server.monitoring.svc.cluster.local:8428
+        isDefault: true
+        jsonData:
+          httpMethod: POST
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboards-provisioning
+  namespace: deep-reader
+data:
+  dashboards.yaml: |
+    apiVersion: 1
+    providers:
+      - name: 'default'
+        orgId: 1
+        folder: ''
+        type: file
+        disableDeletion: false
+        editable: true
+        options:
+          path: /var/lib/grafana/dashboards
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: grafana
+  namespace: deep-reader
   labels:
     app: grafana
     app.kubernetes.io/name: grafana
@@ -42,8 +70,6 @@ spec:
             - name: http
               containerPort: 3000
           env:
-            - name: GF_INSTALL_PLUGINS
-              value: "victoriametrics-logs-datasource"
             - name: GF_AUTH_ANONYMOUS_ENABLED
               value: "true"
             - name: GF_AUTH_ANONYMOUS_ORG_ROLE
@@ -54,6 +80,11 @@ spec:
             - name: datasources
               mountPath: /etc/grafana/provisioning/datasources/datasources.yaml
               subPath: datasources.yaml
+            - name: dashboard-provider
+              mountPath: /etc/grafana/provisioning/dashboards/dashboards.yaml
+              subPath: dashboards.yaml
+            - name: slo-dashboard
+              mountPath: /var/lib/grafana/dashboards
           readinessProbe:
             httpGet:
               path: /api/health
@@ -67,16 +98,23 @@ spec:
               memory: 128Mi
             limits:
               cpu: 500m
-              memory: 512Mi
+              memory: 1024Mi
       volumes:
         - name: datasources
           configMap:
             name: grafana-datasources
+        - name: dashboard-provider
+          configMap:
+            name: grafana-dashboards-provisioning
+        - name: slo-dashboard
+          configMap:
+            name: grafana-slo-dashboard-json
 ---
 apiVersion: v1
 kind: Service
 metadata:
   name: grafana
+  namespace: deep-reader
   labels:
     app: grafana
     app.kubernetes.io/name: grafana

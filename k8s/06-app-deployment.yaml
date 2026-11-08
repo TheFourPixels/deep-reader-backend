@@ -2,6 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: deep-reader-app
+  namespace: deep-reader
   labels:
     app: deep-reader-app
     app.kubernetes.io/name: deep-reader-app
@@ -12,7 +13,7 @@ spec:
     type: RollingUpdate
     rollingUpdate:
       maxSurge: 1
-      maxUnavailable: 1
+      maxUnavailable: 0
   selector:
     matchLabels:
       app: deep-reader-app
@@ -32,24 +33,29 @@ spec:
           ports:
             - containerPort: 8080
               name: http
-            - containerPort: 8080
-              name: metrics
           envFrom:
             - configMapRef:
                 name: deep-reader-config
             - secretRef:
                 name: deep-reader-secret
+          startupProbe:
+            httpGet:
+              path: /api/health
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            failureThreshold: 30
           readinessProbe:
             httpGet:
               path: /api/health
               port: 8080
-            initialDelaySeconds: 15
+            initialDelaySeconds: 5
             periodSeconds: 5
           livenessProbe:
             httpGet:
               path: /api/health
               port: 8080
-            initialDelaySeconds: 30
+            initialDelaySeconds: 15
             periodSeconds: 10
           resources:
             requests:

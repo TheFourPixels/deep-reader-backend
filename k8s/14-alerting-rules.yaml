@@ -13,7 +13,7 @@ data:
         interval: 5s
         rules:
           - alert: DeepReaderHigh5xxErrorRate
-            expr: (sum(rate(http_server_requests_seconds_count{status=~"5..", uri=~"/api/.*"}[1m])) / clamp_min(sum(rate(http_server_requests_seconds_count{uri=~"/api/.*"}[1m])), 0.001)) * 100 > 1
+            expr: (sum(rate(http_server_requests_seconds_count{status=~"5..", uri=~"/api/.*"}[1m])) / sum(rate(http_server_requests_seconds_count{uri=~"/api/.*"}[1m]))) * 100 > 1
             for: 10s
             labels:
               severity: critical
@@ -24,7 +24,7 @@ data:
               description: "Доля HTTP 5xx ответов составляет {{ $value | printf \"%.2f\" }}% при пороге 1%. Пользователи получают ошибки при чтении или создании аннотаций."
 
           - alert: DeepReaderHighAnnotationLatency
-            expr: (rate(deepreader_annotation_create_duration_seconds_sum[1m]) / clamp_min(rate(deepreader_annotation_create_duration_seconds_count[1m]), 0.001)) > 0.3
+            expr: (rate(deepreader_annotation_create_duration_seconds_sum[1m]) / rate(deepreader_annotation_create_duration_seconds_count[1m])) > 0.3
             for: 10s
             labels:
               severity: warning
@@ -35,7 +35,7 @@ data:
               description: "Среднее время создания аннотации читателем превысило 300мс (текущее: {{ $value | printf \"%.3f\" }}s)."
 
           - alert: DeepReaderHighApiLatency
-            expr: (sum(rate(http_server_requests_seconds_sum{uri=~"/api/.*"}[1m])) / clamp_min(sum(rate(http_server_requests_seconds_count{uri=~"/api/.*"}[1m])), 0.001)) > 0.3
+            expr: (sum(rate(http_server_requests_seconds_sum{uri=~"/api/.*"}[1m])) / sum(rate(http_server_requests_seconds_count{uri=~"/api/.*"}[1m]))) > 0.3
             for: 10s
             labels:
               severity: warning

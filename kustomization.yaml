@@ -5,11 +5,3 @@ resources:
   - k8s
   - k8s/monitoring
 
-configMapGenerator:
-  - name: deep-reader-prober-script
-    namespace: deep-reader
-    files:
-      - scripts/prober.py
-
-generatorOptions:
-  disableNameSuffixHash: true

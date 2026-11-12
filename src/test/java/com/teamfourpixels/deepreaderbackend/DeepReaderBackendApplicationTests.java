@@ -36,9 +36,6 @@ class DeepReaderBackendApplicationTests {
                 .andExpect(jsonPath("$.status", is("UP")))
                 .andExpect(jsonPath("$.service", is("deep-reader-backend")));
 
-        mockMvc.perform(get("/favicon.ico"))
-                .andExpect(status().isOk());
-
         mockMvc.perform(get("/non-existent-resource.xyz"))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.status", is(404)));

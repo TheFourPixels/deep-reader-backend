@@ -14,6 +14,5 @@ resources:
   - 08-victoria-logs.yaml
   - 09-vector.yaml
   - 11-vmalert.yaml
-  - 12-prober.yaml
   - 13-alertmanager.yaml
   - 14-alerting-rules.yaml

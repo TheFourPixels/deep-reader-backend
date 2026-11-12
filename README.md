@@ -1,163 +1,143 @@
-# Deep Reader — Читалка с AI-анализом сленга, метафор и скрытого подтекста
+# Deep Reader Backend — REST API для осознанного чтения с контекстным AI-анализом
 
-Клиент-серверное веб-приложение, разработанное в строгом соответствии с методологией **The Twelve-Factor App (12 факторов)**.
+Высоконагруженный бэкенд-сервис для мобильного приложения **Deep Reader**, спроектированный в строгом соответствии с методологией **The Twelve-Factor App (12 факторов)** и принципами Cloud Native.
 
-## О проекте
-Deep Reader решает проблему буквального словарного перевода художественной прозы. Сервис анализирует контекст произведений и предоставляет читателю интерактивные объяснения сленга, авторских метафор, идиом и скрытого подтекста при чтении оригинального текста.
-
-### Стек технологий:
-- **Backend:** Java 25, Spring Boot 4, Spring Data JPA, Hibernate 7, PostgreSQL Driver.
-- **Frontend:** SPA (HTML5, CSS3, ES6 JavaScript) без тяжёлых зависимостей (Node.js/npm не требуются), раздаётся встроенным сервером приложения по протоколу HTTP/1.1 REST.
-- **Database:** PostgreSQL 16.
-- **Testing:** JUnit 5, Spring Boot Test, MockMvc, Testcontainers
-- **Инфраструктура:** Docker, Docker Compose, Multi-stage Dockerfile, Kubernetes (Minikube).
-- **Логирование и наблюдаемость:** Victoria Logs, Vector (DaemonSet), Grafana (плагин VictoriaLogs).
+Сервис предоставляет RESTful API для каталога книг, структурированных глав и интерактивных контекстных аннотаций (разъяснение сленга, авторских метафор, исторических аллюзий и скрытого подтекста художественных произведений).
 
 ---
 
-## Быстрый запуск
+## 🛠 Стек технологий
 
-### Запуск через Docker Compose
-Для запуска приложения и базы данных PostgreSQL одной командой:
+- **Язык и фреймворк:** Java 25, **Spring Boot 4.1.1** (Spring Data JPA, Spring Web, Validation, Actuator).
+- **СУБД:** **PostgreSQL 16** с пулом соединений HikariCP.
+- **Миграции базы данных:** **Liquibase** (`db.changelog-master.yaml`).
+- **Контейнеризация и оркестрация:** Docker, Multi-stage Dockerfile, Docker Compose, Kubernetes (Minikube / Kustomize).
+- **Сбор и централизация логов:** Logback Custom JSON Layout (MDC, `trace_id`, `span_id`), **Vector DaemonSet**, **VictoriaLogs**.
+- **Метрики и мониторинг:** Micrometer, Spring Boot Actuator, **VictoriaMetrics**, **Grafana** (комплексный дашборд RED-метрик, JVM, HikariCP и SLA).
+- **Алертинг:** **vmalert**, **Alertmanager** (бизнес- и системные правила алертов).
+- **Тестирование:** JUnit 5, Spring Boot Test, MockMvc, Testcontainers.
+
+---
+
+## 🚀 Быстрый запуск
+
+### 1. Запуск через Docker Compose (Backend + PostgreSQL)
 
 ```bash
-docker compose up --build
+docker compose up --build -d
 ```
-После старта веб-интерфейс доступен в браузере по адресу:
-**[http://localhost:8080](http://localhost:8080)**
+
+После старта бэкенд API доступен по адресу: **http://localhost:8080/api/health**
 
 ---
 
-### Локальный запуск
+### 2. Локальный запуск через Maven
 
-1. Убедитесь, что параметры подключения в `.env` соответствуют вашей локальной СУБД PostgreSQL
-2. Запустите приложение с помощью:
+1. Убедитесь, что запущен PostgreSQL и параметры подключения в `.env` корректны.
+2. Запустите приложение:
    ```bash
    ./mvnw spring-boot:run
    ```
-3. Откройте в браузере: **http://localhost:8080**
+3. Проверка доступности:
+   ```bash
+   curl http://localhost:8080/api/health
+   ```
 
 ---
 
-### Развёртывание в Minikube
+### 3. Развёртывание в Kubernetes (Kustomize)
 
-#### Запуск Minikube
+#### Старт Minikube и сборка образа:
 ```bash
 minikube start --driver=docker
-```
+minikube docker-env | Invoke-Expression   # PowerShell
+# eval $(minikube docker-env)           # Linux / MacOS / GitBash
 
-#### Использование Docker-демона Minikube
-Для Windows PowerShell:
-```powershell
-minikube docker-env | Invoke-Expression
-```
-Для GitBash / WSL:
-```bash
-eval $(minikube docker-env)
-```
-После этого `docker build` будет создавать образ непосредственно в кластере Minikube.
-
-#### Сборка образа
-```bash
 docker build -t deep-reader-app:latest .
 ```
-*Если вы предпочитаете собрать образ локально, используйте `docker build -t deep-reader-app:latest .` и затем загрузите его в Minikube:* 
-```bash
-docker build -t deep-reader-app:latest .
-minikube image load deep-reader-app:latest
-```
 
-#### Применение манифестов Kubernetes
+#### Применение манифестов инфраструктуры и мониторинга:
 ```bash
 kubectl apply -k k8s/
 ```
 
-#### Проверка состояния
+#### Проверка статуса подов:
 ```bash
-kubectl get all
-kubectl get pods -w 
+kubectl get pods -n deep-reader
+kubectl get pods -n monitoring
 ```
 
-#### Масштабирование backend-приложения
+#### Проброс портов к сервисам:
 ```bash
-kubectl scale deployment deep-reader-app --replicas=3
-kubectl get pods
-```
-Можно увидеть три пода `deep-reader-app`
+# REST API бэкенда:
+kubectl port-forward -n deep-reader service/deep-reader-app 8080:8080
 
-#### Доступ к UI приложения
-```bash
-minikube service deep-reader-app  -  откроет браузер по http://<minikube-ip>:30080
+# VictoriaLogs (vmui):
+kubectl port-forward -n deep-reader service/victoria-logs 9428:9428
 
-kubectl port-forward service/deep-reader-app 8080:8080
-```
-Приложение будет доступно по адресу **http://localhost:8080**
+# Alertmanager:
+kubectl port-forward -n deep-reader service/alertmanager 9093:9093
 
----
-
-### Централизованное логирование (Victoria Logs & Vector & Grafana)
-
-Система логирования развёрнута в том же кластере:
-- **Victoria Logs:** единое высокопроизводительное хранилище логов с веб-интерфейсом `vmui`.
-- **Vector (DaemonSet):** агент сбора логов с хоста Kubernetes (`/var/log/pods`), автоматический парсинг JSON из `stdout` приложения и пересылка в Victoria Logs (`/insert/jsonline`).
-- **Grafana:** визуализация логов с предустановленным официальным плагином `victoriametrics-logs-datasource`.
-
-#### Доступ к интерфейсам логирования:
-```bash
-# Веб-интерфейс Victoria Logs (vmui):
-kubectl port-forward service/victoria-logs 9428:9428
-# Открыть в браузере: http://localhost:9428/select/vmui/
-
-# Grafana (Explore с источником VictoriaLogs):
-kubectl port-forward service/grafana 3000:3000
-# Открыть в браузере: http://localhost:3000/explore
-```
-
-Подробное описание архитектуры, выбор шиппера и разбор 4 запросов LogsQL приведены в [Отчёт.md](Отчёт.md).
-
----
-
-## Запуск автоматических тестов
-Для прогона набора модульных и интеграционных тестов:
-
-```bash
-./mvnw test
+# Grafana (дашборды метрик и логов):
+kubectl port-forward -n deep-reader service/grafana 3000:3000
 ```
 
 ---
 
-## REST API эндпоинты
+## 📡 REST API Спецификация
+
+Все эндпоинты API возвращают и принимают данные в формате `application/json`.
 
 ### Книги (`/api/books`)
-- `GET /api/books` — получить список книг (поддерживает `?search=...`)
-- `GET /api/books/{id}` — получить книгу по ID
-- `POST /api/books` — создать книгу
-- `PUT /api/books/{id}` — обновить книгу
-- `DELETE /api/books/{id}` — удалить книгу
+| Метод | Эндпоинт | Описание |
+| :--- | :--- | :--- |
+| `GET` | `/api/books` | Получить список книг (поддерживает фильтрацию `?search=...`) |
+| `GET` | `/api/books/{id}` | Получить детальную информацию о книге по ID |
+| `POST` | `/api/books` | Создать новую книгу |
+| `PUT` | `/api/books/{id}` | Обновить метаданные книги |
+| `DELETE` | `/api/books/{id}` | Удалить книгу со всеми зависимыми главами и аннотациями |
 
 ### Главы (`/api/chapters`, `/api/books/{bookId}/chapters`)
-- `GET /api/books/{bookId}/chapters` — список глав книги
-- `GET /api/chapters/{id}` — получить главу и её текст
-- `POST /api/books/{bookId}/chapters` — добавить главу к книге
-- `PUT /api/chapters/{id}` — обновить главу
-- `DELETE /api/chapters/{id}` — удалить главу
+| Метод | Эндпоинт | Описание |
+| :--- | :--- | :--- |
+| `GET` | `/api/books/{bookId}/chapters` | Список глав книги |
+| `GET` | `/api/chapters/{id}` | Получить главу и её полный текст |
+| `POST` | `/api/books/{bookId}/chapters` | Добавить главу к книге |
+| `PUT` | `/api/chapters/{id}` | Обновить главу |
+| `DELETE` | `/api/chapters/{id}` | Удалить главу |
 
-### Контекстные подсказки к сленгу и метафорам (`/api/annotations`)
-- `GET /api/annotations` — список всех аннотаций
-- `GET /api/books/{bookId}/annotations` — аннотации к конкретной книге
-- `GET /api/chapters/{chapterId}/annotations` — аннотации к конкретной главе
-- `POST /api/annotations` — создать подсказку/разбор фразы
-- `PUT /api/annotations/{id}` — обновить подсказку
-- `DELETE /api/annotations/{id}` — удалить подсказку
+### Контекстные аннотации (`/api/annotations`)
+| Метод | Эндпоинт | Описание |
+| :--- | :--- | :--- |
+| `GET` | `/api/annotations` | Список всех аннотаций |
+| `GET` | `/api/books/{bookId}/annotations` | Список аннотаций к выбранной книге |
+| `GET` | `/api/chapters/{chapterId}/annotations` | Список аннотаций к выбранной главе |
+| `POST` | `/api/books/{bookId}/annotations` | Добавить сноску/объяснение сленга или метафоры |
+| `PUT` | `/api/annotations/{id}` | Обновить аннотацию |
+| `DELETE` | `/api/annotations/{id}` | Удалить аннотацию |
 
-### Системные эндпоинты
-- `GET /api/health` — статус здоровья сервиса и статус подключения к PostgreSQL
-- `GET /api/stats` — общая аналитика и счетчики сущностей
+### Системные и диагностические эндпоинты
+| Метод | Эндпоинт | Описание |
+| :--- | :--- | :--- |
+| `GET` | `/api/health` | Проверка здоровья сервиса и доступности PostgreSQL (Liveness/Readiness) |
+| `GET` | `/api/stats` | Агрегированная статистика базы (число книг, глав, аннотаций) |
+| `GET` | `/actuator/prometheus` | Эндпоинт сбора метрик Prometheus / VictoriaMetrics |
 
 ---
 
-## Примечания
-- Порт, на котором слушает Spring Boot, задаётся переменной окружения `PORT`, по умолчанию `8080`. В манифесте `ConfigMap`-а задаётся `PORT: "8080"` и Service `deep-reader-app` открывается как `NodePort` 30080.
-- Секреты хранятся в `Secret` `deep-reader-secret`. При работе в продакшн-окружении используются **Sealed Secrets**, но тк это тестовый проект, то пока что просто секреты :)
+## 📊 Наблюдаемость (Observability)
+
+1. **Структурированные логи в JSON:**
+   Каждое лог-сообщение содержит метки времени, уровень логирования, имя логгера, поток, MDC контекст (`trace_id`, `span_id`), HTTP-метод, URI, код ответа и время выполнения запроса. Агент **Vector** читает логи с подов и пересылает в **VictoriaLogs**.
+2. **Метрики и дашборды:**
+   Сервис экспортирует RED-метрики (Rate, Errors, Duration), кастомные бизнес-таймеры (длительность сохранения аннотаций), системные метрики JVM (память Heap, Non-Heap, GC, Threads) и метрики пула HikariCP. Дашборд импортируется в **Grafana** из `grafana-dashboard.json`.
+3. **Алертинг:**
+   **vmalert** оценивает PromQL-правила каждые 5 секунд и отправляет уведомления в **Alertmanager** при превышении порога ошибок 5xx (>1%), деградации latency (>300ms) или переполнении пула соединений БД (>80%).
 
 ---
+
+## 🧪 Запуск тестов
+
+```bash
+./mvnw clean test
+```

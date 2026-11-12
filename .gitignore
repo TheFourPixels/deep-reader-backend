@@ -4,9 +4,13 @@ target/
 !**/src/main/**/target/
 !**/src/test/**/target/
 
-### Archives ###
+### Archives and Environment ###
 *.zip
-*.env
+.env
+.env.*
+.env.local
+!.env.example
+.gemini/
 
 ### STS ###
 .apt_generated

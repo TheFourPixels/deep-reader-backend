@@ -22,7 +22,7 @@ data:
     receivers:
       - name: 'webhook-logger'
         webhook_configs:
-          - url: 'http://127.0.0.1:9099/webhook'
+          - url: 'http://127.0.0.1:9898/echo'
             send_resolved: true
 ---
 apiVersion: apps/v1
@@ -75,44 +75,15 @@ spec:
               cpu: 200m
               memory: 128Mi
         - name: webhook-logger
-          image: python:3.11-alpine
+          image: stefanprodan/podinfo:latest
           imagePullPolicy: IfNotPresent
-          command:
-            - python
-            - -u
-            - -c
-            - |
-              from http.server import HTTPServer, BaseHTTPRequestHandler
-              import json, sys
-
-              class H(BaseHTTPRequestHandler):
-                  def do_POST(self):
-                      length = int(self.headers.get('content-length', 0))
-                      body = self.rfile.read(length)
-                      try:
-                          data = json.loads(body.decode('utf-8'))
-                          status = data.get('status', 'unknown').upper()
-                          for a in data.get('alerts', []):
-                              labels = a.get('labels', {})
-                              annotations = a.get('annotations', {})
-                              print(f"[ALERT NOTIFICATION] status={status} alert={labels.get('alertname')} severity={labels.get('severity')} summary='{annotations.get('summary')}'", flush=True)
-                      except Exception as e:
-                          print("Parse error:", e, flush=True)
-                      self.send_response(200)
-                      self.end_headers()
-                      self.wfile.write(b"OK")
-                  def log_message(self, format, *args):
-                      return
-
-              print("Webhook logger started on :9099", flush=True)
-              HTTPServer(('0.0.0.0', 9099), H).serve_forever()
           ports:
             - name: webhook
-              containerPort: 9099
+              containerPort: 9898
           resources:
             requests:
               cpu: 10m
-              memory: 24Mi
+              memory: 16Mi
             limits:
               cpu: 100m
               memory: 64Mi

@@ -10,7 +10,7 @@ services:
       POSTGRES_USER: ${DB_USERNAME}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
     ports:
-      - "${DB_PORT}:${DB_INTERNAL_PORT}"
+      - "${DB_PORT:-5432}:${DB_INTERNAL_PORT:-5432}"
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
@@ -24,7 +24,7 @@ services:
       context: .
       dockerfile: Dockerfile
       args:
-        PORT: ${PORT}
+        PORT: ${PORT:-8080}
     container_name: deep-reader-app
     restart: unless-stopped
     depends_on:
@@ -33,14 +33,13 @@ services:
     env_file:
       - .env
     ports:
-      - "${PORT}:${PORT}"
+      - "${PORT:-8080}:${PORT:-8080}"
     environment:
-      PORT: ${PORT}
-      SPRING_DATASOURCE_URL: jdbc:postgresql://db:${DB_INTERNAL_PORT}/${DB_NAME}
+      PORT: ${PORT:-8080}
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:${DB_INTERNAL_PORT:-5432}/${DB_NAME}
       SPRING_DATASOURCE_USERNAME: ${DB_USERNAME}
       SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD}
-      LOG_LEVEL: ${LOG_LEVEL}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
 
 volumes:
   pgdata:
-    driver: local

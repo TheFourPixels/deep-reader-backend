@@ -21,29 +21,51 @@ data:
               service: deep-reader-app
             annotations:
               summary: "Высокая доля ошибок 5xx на API Deep Reader (> 1%)"
-              description: "Доля HTTP 5xx ответов составляет {{ $value | printf \"%.2f\" }}% при пороге 1%. Пользователи получают ошибки при чтении или создании аннотаций."
+              description: "Доля HTTP 5xx ответов составляет {{ $value | printf \"%.2f\" }}% при пороге 1%. Пользователи получают ошибки при вызовах AI-прокси."
 
-          - alert: DeepReaderHighAnnotationLatency
-            expr: (rate(deepreader_annotation_create_duration_seconds_sum[1m]) / rate(deepreader_annotation_create_duration_seconds_count[1m])) > 0.3
-            for: 10s
+          - alert: AiLlmHighLatency
+            expr: histogram_quantile(0.95, sum(rate(ai_llm_duration_seconds_bucket[2m])) by (le)) > 8
+            for: 2m
             labels:
               severity: warning
               tier: business
               service: deep-reader-app
             annotations:
-              summary: "Высокое время создания аннотаций (> 300ms)"
-              description: "Среднее время создания аннотации читателем превысило 300мс (текущее: {{ $value | printf \"%.3f\" }}s)."
+              summary: "Высокая задержка вызова LLM (> 8s)"
+              description: "p95 задержка вызова внешнего LLM API превысила 8 секунд в течение 2 минут (текущее: {{ $value | printf \"%.3f\" }}s)."
+
+          - alert: AiHighEmptyResponseRate
+            expr: (sum(rate(ai_errors_total{error_code="EMPTY_AI_RESPONSE"}[5m])) / sum(rate(ai_requests_total{endpoint="explain"}[5m]))) * 100 > 2
+            for: 1m
+            labels:
+              severity: critical
+              tier: business
+              service: deep-reader-app
+            annotations:
+              summary: "Высокая доля пустых ответов AI (> 2%)"
+              description: "Доля ошибок EMPTY_AI_RESPONSE превысила 2% от общего числа запросов explain за 5 минут."
+
+          - alert: AiExternalProvider5xx
+            expr: (sum(rate(ai_provider_latency_seconds_count{status="error"}[1m])) / sum(rate(ai_provider_latency_seconds_count[1m]))) * 100 > 5
+            for: 1m
+            labels:
+              severity: critical
+              tier: business
+              service: deep-reader-app
+            annotations:
+              summary: "Высокая доля сбоев внешних провайдеров (> 5%)"
+              description: "Доля ошибок внешних провайдеров (OpenAI / DeepL) превысила 5% за 1 минуту."
 
           - alert: DeepReaderHighApiLatency
-            expr: (sum(rate(http_server_requests_seconds_sum{uri=~"/api/.*"}[1m])) / sum(rate(http_server_requests_seconds_count{uri=~"/api/.*"}[1m]))) > 0.3
+            expr: (sum(rate(http_server_requests_seconds_sum{uri=~"/api/.*"}[1m])) / sum(rate(http_server_requests_seconds_count{uri=~"/api/.*"}[1m]))) > 0.5
             for: 10s
             labels:
               severity: warning
               tier: business
               service: deep-reader-app
             annotations:
-              summary: "Высокая задержка HTTP-запросов к API Deep Reader (> 300ms)"
-              description: "Среднее время обработки API-запросов составляет {{ $value | printf \"%.3f\" }}s (порог 0.3s). Наблюдается деградация отзывчивости сервиса."
+              summary: "Высокая задержка HTTP-запросов к API Deep Reader (> 500ms)"
+              description: "Среднее время обработки API-запросов составляет {{ $value | printf \"%.3f\" }}s (порог 0.5s). Наблюдается деградация отзывчивости сервиса."
 
       - name: deep-reader-runtime-alerts
         interval: 5s

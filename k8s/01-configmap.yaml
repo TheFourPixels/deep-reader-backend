@@ -18,3 +18,5 @@ data:
   DB_POOL_MIN: "2"
   SHOW_SQL: "false"
   LOG_LEVEL: "INFO"
+  AI_LLM_PROVIDER: "mock"
+  AI_TRANSLATOR_PROVIDER: "mock"

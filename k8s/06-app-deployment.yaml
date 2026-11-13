@@ -40,20 +40,20 @@ spec:
                 name: deep-reader-secret
           startupProbe:
             httpGet:
-              path: /api/health
+              path: /api/v1/health
               port: 8080
             initialDelaySeconds: 10
             periodSeconds: 5
             failureThreshold: 30
           readinessProbe:
             httpGet:
-              path: /api/health
+              path: /api/v1/health
               port: 8080
             initialDelaySeconds: 5
             periodSeconds: 5
           livenessProbe:
             httpGet:
-              path: /api/health
+              path: /api/v1/health
               port: 8080
             initialDelaySeconds: 15
             periodSeconds: 10
